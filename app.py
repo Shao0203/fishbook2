@@ -1,12 +1,15 @@
-from ch1.two_layer_net import TwoLayerNet
-from dataset.spiral import load_data
-from common.optimizer import SGD
-from common.trainer import Trainer
+import numpy as np
+from common.util import preprocess, create_co_matrix
 
 
-x, t = load_data()
-model = TwoLayerNet(2, 10, 3)
-optimizer = SGD(1.0)
-trainer = Trainer(model, optimizer)
-trainer.fit(x, t, 300, 30, eval_interval=10)
-trainer.plot()
+text = 'You say goodbye and I say hello.'
+corpus, word_to_id, id_to_word = preprocess(text)
+co_matrix = create_co_matrix(corpus, len(word_to_id))
+print(co_matrix)
+# [[0 1 0 0 0 0 0]
+#  [1 0 1 0 1 1 0]
+#  [0 1 0 1 0 0 0]
+#  [0 0 1 0 1 0 0]
+#  [0 1 0 1 0 0 0]
+#  [0 1 0 0 0 0 1]
+#  [0 0 0 0 0 1 0]]
