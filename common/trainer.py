@@ -11,11 +11,10 @@ class Trainer:
         self.optimizer = optimizer
         self.loss_list = []
         self.eval_interval = None
-        self.current_epoch = 0
 
     def fit(self, x, t, max_epoch=10, batch_size=32, max_grad=None, eval_interval=20):
         data_size = len(x)
-        max_iters = data_size // batch_size
+        iter_per_epoch = data_size // batch_size
         self.eval_interval = eval_interval
         model, optimizer = self.model, self.optimizer
         total_loss = 0
@@ -28,9 +27,9 @@ class Trainer:
             x = x[idx]
             t = t[idx]
 
-            for iters in range(max_iters):
-                batch_x = x[iters*batch_size:(iters+1)*batch_size]
-                batch_t = t[iters*batch_size:(iters+1)*batch_size]
+            for iter in range(iter_per_epoch):
+                batch_x = x[iter*batch_size:(iter+1)*batch_size]
+                batch_t = t[iter*batch_size:(iter+1)*batch_size]
 
                 # 计算梯度，更新参数
                 loss = model.forward(batch_x, batch_t)
@@ -43,15 +42,12 @@ class Trainer:
                 loss_count += 1
 
                 # 评价
-                if (eval_interval is not None) and (iters % eval_interval) == 0:
+                if (eval_interval is not None) and (iter % eval_interval) == 0:
                     avg_loss = total_loss / loss_count
                     elapsed_time = time.time() - start_time
-                    print('| epoch %d |  iter %d / %d | time %d[s] | loss %.2f'
-                          % (self.current_epoch + 1, iters + 1, max_iters, elapsed_time, avg_loss))
+                    print(f'Epoch {epoch+1} | Iter {iter+1}/{iter_per_epoch} | Time {elapsed_time} | Loss {avg_loss:.2f}')
                     self.loss_list.append(float(avg_loss))
                     total_loss, loss_count = 0, 0
-
-            self.current_epoch += 1
 
     def plot(self, ylim=None):
         x = np.arange(len(self.loss_list))
@@ -70,7 +66,6 @@ class RnnlmTrainer:
         self.time_idx = None
         self.ppl_list = None
         self.eval_interval = None
-        self.current_epoch = 0
 
     def get_batch(self, x, t, batch_size, time_size):
         batch_x = np.empty((batch_size, time_size), dtype='i')
@@ -87,10 +82,9 @@ class RnnlmTrainer:
             self.time_idx += 1
         return batch_x, batch_t
 
-    def fit(self, xs, ts, max_epoch=10, batch_size=20, time_size=35,
-            max_grad=None, eval_interval=20):
+    def fit(self, xs, ts, max_epoch=10, batch_size=20, time_size=35, max_grad=None, eval_interval=20):
         data_size = len(xs)
-        max_iters = data_size // (batch_size * time_size)
+        iter_per_epoch = data_size // (batch_size * time_size)
         self.time_idx = 0
         self.ppl_list = []
         self.eval_interval = eval_interval
@@ -100,7 +94,7 @@ class RnnlmTrainer:
 
         start_time = time.time()
         for epoch in range(max_epoch):
-            for iters in range(max_iters):
+            for iter in range(iter_per_epoch):
                 batch_x, batch_t = self.get_batch(xs, ts, batch_size, time_size)
 
                 # 计算梯度，更新参数
@@ -114,15 +108,12 @@ class RnnlmTrainer:
                 loss_count += 1
 
                 # 评价困惑度
-                if (eval_interval is not None) and (iters % eval_interval) == 0:
+                if (eval_interval is not None) and (iter % eval_interval) == 0:
                     ppl = np.exp(total_loss / loss_count)
                     elapsed_time = time.time() - start_time
-                    print('| epoch %d |  iter %d / %d | time %d[s] | perplexity %.2f'
-                          % (self.current_epoch + 1, iters + 1, max_iters, elapsed_time, ppl))
+                    print(f'Epoch {epoch+1} | Iter {iter+1}/{iter_per_epoch} | Time {elapsed_time} | Perplexity {ppl:.2f}')
                     self.ppl_list.append(float(ppl))
                     total_loss, loss_count = 0, 0
-
-            self.current_epoch += 1
 
     def plot(self, ylim=None):
         x = np.arange(len(self.ppl_list))
