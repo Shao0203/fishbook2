@@ -24,7 +24,7 @@ def create_co_matrix(corpus, vocab_size, window_size=1):
     co_matrix = np.zeros((vocab_size, vocab_size), dtype=np.int32)
 
     for idx, word_id in enumerate(corpus):
-        for i in range(1, window_size + 1):
+        for i in range(1, window_size+1):
             left_idx = idx - i
             right_idx = idx + i
 
@@ -62,7 +62,7 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
     :param top: 显示到前几位
     '''
     if query not in word_to_id:
-        print('%s is not found' % query)
+        print(f'{query} is not found')
         return
 
     print('\n[query] ' + query)
@@ -79,7 +79,7 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
     for i in (-1 * similarity).argsort():
         if id_to_word[i] == query:
             continue
-        print(' %s: %s' % (id_to_word[i], similarity[i]))
+        print(f'{id_to_word[i]}: {similarity[i]}')
 
         count += 1
         if count >= top:
@@ -131,8 +131,17 @@ def ppmi(C, verbose=False, eps=1e-8):
             if verbose:
                 cnt += 1
                 if cnt % (total//100 + 1) == 0:
-                    print('%.1f%% done' % (100*cnt/total))
+                    print(f'{cnt/total:.2%} done')
     return M
+
+
+def ppmi_fast(C, eps=1e-8):
+    N = np.sum(C)
+    S = np.sum(C, axis=0)
+    # 全部向量化，一次算完
+    M = np.log2(C * N / (np.outer(S, S)) + eps)
+    M = np.maximum(M, 0)
+    return M.astype(np.float32)
 
 
 def create_contexts_target(corpus, window_size=1):
