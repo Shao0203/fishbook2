@@ -86,30 +86,6 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
             return
 
 
-def convert_one_hot(corpus, vocab_size):
-    '''转换为one-hot表示
-
-    :param corpus: 单词ID列表(一维或二维的NumPy数组)
-    :param vocab_size: 词汇个数
-    :return: one-hot表示(二维或三维的NumPy数组)
-    '''
-    N = corpus.shape[0]
-
-    if corpus.ndim == 1:
-        one_hot = np.zeros((N, vocab_size), dtype=np.int32)
-        for idx, word_id in enumerate(corpus):
-            one_hot[idx, word_id] = 1
-
-    elif corpus.ndim == 2:
-        C = corpus.shape[1]
-        one_hot = np.zeros((N, C, vocab_size), dtype=np.int32)
-        for idx_0, word_ids in enumerate(corpus):
-            for idx_1, word_id in enumerate(word_ids):
-                one_hot[idx_0, idx_1, word_id] = 1
-
-    return one_hot
-
-
 def ppmi(C, verbose=False, eps=1e-8):
     '''生成PPMI(正的点互信息)
 
@@ -163,6 +139,54 @@ def create_contexts_target(corpus, window_size=1):
         contexts.append(cs)
 
     return np.array(contexts), np.array(target)
+
+
+def create_contexts_target_new(corpus, window_size=1):
+    '''different approach'''
+    target = corpus[window_size:-window_size]
+    contexts = []
+    for idx in range(window_size, len(corpus)-window_size):
+        cs = list(corpus[idx - window_size: idx + window_size + 1])
+        cs.pop(window_size)
+        contexts.append(cs)
+    return np.array(contexts), np.array(target)
+
+
+def convert_one_hot(corpus, vocab_size):
+    '''转换为one-hot表示
+
+    :param corpus: 单词ID列表(一维或二维的NumPy数组)
+    :param vocab_size: 词汇个数
+    :return: one-hot表示(二维或三维的NumPy数组)
+    '''
+    N = corpus.shape[0]
+
+    if corpus.ndim == 1:
+        one_hot = np.zeros((N, vocab_size), dtype=np.int32)
+        for idx, word_id in enumerate(corpus):
+            one_hot[idx, word_id] = 1
+
+    elif corpus.ndim == 2:
+        C = corpus.shape[1]
+        one_hot = np.zeros((N, C, vocab_size), dtype=np.int32)
+        for idx_0, word_ids in enumerate(corpus):
+            for idx_1, word_id in enumerate(word_ids):
+                one_hot[idx_0, idx_1, word_id] = 1
+
+    return one_hot
+
+
+def convert_one_hot_new(corpus, vocab_size):
+    '''花式索引的写法 - 处理2维contexts需要通过[:, None]升维'''
+    if corpus.ndim == 1:
+        N = corpus.shape[0]
+        one_hot = np.zeros((N, vocab_size))
+        one_hot[np.arange(N), corpus] = 1
+    if corpus.ndim == 2:
+        N, C = corpus.shape
+        one_hot = np.zeros((N, C, vocab_size))
+        one_hot[np.arange(N)[:, None], np.arange(C)[None, :], corpus] = 1
+    return one_hot
 
 
 def to_cpu(x):
