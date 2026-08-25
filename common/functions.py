@@ -22,3 +22,7 @@ def cross_entropy_error(y, t):
         t = np.argmax(t, axis=1)
     batch_size = y.shape[0]
     return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+
+
+def cross_entropy_error_sigmoid(y, t):
+    return -(t * np.log(y + 1e-7) + (1 - t) * np.log(1 - y + 1e-7))

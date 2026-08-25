@@ -3,6 +3,7 @@ import os
 import sys
 
 
+# Chatper 2
 def preprocess(text):
     words = text.lower().replace('.', ' .').split()
     id_to_word = {id: word for id, word in enumerate(dict.fromkeys(words))}
@@ -120,6 +121,7 @@ def ppmi_fast(C, eps=1e-8):
     return M.astype(np.float32)
 
 
+# Chatper 3
 def create_contexts_target(corpus, window_size=1):
     '''生成上下文和目标词
 
