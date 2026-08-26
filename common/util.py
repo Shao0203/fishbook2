@@ -191,20 +191,6 @@ def convert_one_hot_new(corpus, vocab_size):
     return one_hot
 
 
-def to_cpu(x):
-    import numpy
-    if type(x) == numpy.ndarray:
-        return x
-    return np.asnumpy(x)
-
-
-def to_gpu(x):
-    import cupy
-    if type(x) == cupy.ndarray:
-        return x
-    return cupy.asarray(x)
-
-
 def clip_grads(grads, max_norm):
     total_norm = 0
     for grad in grads:

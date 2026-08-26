@@ -169,8 +169,8 @@ class NegativeSamplingLoss:
     def __init__(self, W, corpus, power=0.75, sample_size=5):
         self.sample_size = sample_size
         self.sampler = UnigramSampler(corpus, power, sample_size)
-        self.loss_layers = [SigmoidWithLoss() for _ in range(sample_size + 1)]
-        self.embed_dot_layers = [EmbeddingDot(W) for _ in range(sample_size + 1)]
+        self.loss_layers = [SigmoidWithLoss() for _ in range(sample_size+1)]
+        self.embed_dot_layers = [EmbeddingDot(W) for _ in range(sample_size+1)]
 
         self.params, self.grads = [], []
         for layer in self.embed_dot_layers:
@@ -190,8 +190,8 @@ class NegativeSamplingLoss:
         # negative forward pass
         for i in range(self.sample_size):
             negative_target = negative_sample[:, i]
-            score = self.embed_dot_layers[1 + i].forward(h, negative_target)
-            loss += self.loss_layers[1 + i].forward(score, negative_label)
+            score = self.embed_dot_layers[1+i].forward(h, negative_target)
+            loss += self.loss_layers[1+i].forward(score, negative_label)
 
         return loss
 
@@ -201,3 +201,72 @@ class NegativeSamplingLoss:
             dscore = l0.backward(dout)
             dh += l1.backward(dscore)
         return dh
+
+
+class CBOW:
+    def __init__(self, vocab_size, hidden_size, window_size, corpus):
+        V, H = vocab_size, hidden_size
+        W_in = 0.01 * np.random.randn(V, H).astype('f')
+        W_out = 0.01 * np.random.randn(V, H).astype('f')
+
+        # layers
+        self.in_layers = [Embedding(W_in) for _ in range(2*window_size)]
+        self.ns_loss = NegativeSamplingLoss(W_out, corpus, power=0.75, sample_size=5)
+
+        # params, grads, word_vecs
+        self.params, self.grads = [], []
+        layers = self.in_layers + [self.ns_loss]
+        for layer in layers:
+            self.params += layer.params
+            self.grads += layer.grads
+
+        self.word_vecs = W_in
+
+    def forward(self, contexts, target):
+        h = 0
+        for i, layer in enumerate(self.in_layers):
+            h += layer.forward(contexts[:, i])
+        h *= 1 / len(self.in_layers)
+        loss = self.ns_loss.forward(h, target)
+        return loss
+
+    def backward(self, dout=1):
+        dout = self.ns_loss.backward(dout)
+        dout *= 1 / len(self.in_layers)
+        for layer in self.in_layers:
+            layer.backward(dout)
+        return None
+
+
+class SkipGram:
+    def __init__(self, vocab_size, hidden_size, window_size, corpus):
+        V, H = vocab_size, hidden_size
+        W_in = 0.01 * np.random.randn(V, H).astype('f')
+        W_out = 0.01 * np.random.randn(V, H).astype('f')
+
+        # layers
+        self.in_layer = Embedding(W_in)
+        self.loss_layers = [NegativeSamplingLoss(W_out, corpus) for _ in range(2*window_size)]
+
+        # params, grads, word_vecs
+        self.params, self.grads = [], []
+        layers = [self.in_layer] + self.loss_layers
+        for layer in layers:
+            self.params += layer.params
+            self.grads += layer.grads
+
+        self.word_vecs = W_in
+
+    def forward(self, contexts, target):
+        h = self.in_layer.forward(target)
+        loss = 0
+        for i, layer in enumerate(self.loss_layers):
+            loss += layer.forward(h, contexts[:, i])
+        return loss
+
+    def backward(self, dout=1):
+        dh = 0
+        for layer in self.loss_layers:
+            dh += layer.backward(dout)
+        self.in_layer.backward(dh)
+        return None

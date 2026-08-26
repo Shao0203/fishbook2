@@ -155,9 +155,8 @@ hello [ 0.9278471 -0.946142   1.1327729 -1.6373544  0.9061884]
 . [-1.1775548   1.1744554   1.7243804  -0.85353583 -1.1529981 ]
 '''
 
+
 # ===== SimpleSkipGram 目标词 → 上下文
-
-
 class SimpleSkipGram:
     def __init__(self, vocab_size, hidden_size):
         V, H = vocab_size, hidden_size
