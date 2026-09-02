@@ -33,6 +33,40 @@ class RNN:
         return dx, dh_prev
 
 
+class TimeEmbedding:
+    def __init__(self, W):
+        self.params = [W]
+        self.grads = [np.zeros_like(W)]
+        self.layers = None
+        self.W = W
+
+    def forward(self, xs):
+        N, T = xs.shape
+        V, D = self.W.shape
+
+        out = np.empty((N, T, D), dtype='f')
+        self.layers = []
+
+        for t in range(T):
+            layer = Embedding(self.W)
+            out[:, t, :] = layer.forward(xs[:, t])
+            self.layers.append(layer)
+
+        return out  # (N, T, D)
+
+    def backward(self, dout):
+        N, T, D = dout.shape
+
+        grad = 0
+        for t in range(T):
+            layer = self.layers[t]
+            layer.backward(dout[:, t, :])
+            grad += layer.grads[0]
+
+        self.grads[0][...] = grad
+        return None
+
+
 class TimeRNN:
     def __init__(self, Wx, Wh, b, stateful=False):
         self.params = [Wx, Wh, b]
@@ -64,7 +98,7 @@ class TimeRNN:
             self.h = layer.forward(xs[:, t, :], self.h)
             hs[:, t, :] = self.h
 
-        return hs
+        return hs  # (N, T, H)
 
     def backward(self, dhs):
         Wx, Wh, b = self.params
@@ -208,40 +242,6 @@ class TimeSigmoidWithLoss:
             dxs[:, t] = layer.backward(dout)
 
         return dxs
-
-
-class TimeEmbedding:
-    def __init__(self, W):
-        self.params = [W]
-        self.grads = [np.zeros_like(W)]
-        self.layers = None
-        self.W = W
-
-    def forward(self, xs):
-        N, T = xs.shape
-        V, D = self.W.shape
-
-        out = np.empty((N, T, D), dtype='f')
-        self.layers = []
-
-        for t in range(T):
-            layer = Embedding(self.W)
-            out[:, t, :] = layer.forward(xs[:, t])
-            self.layers.append(layer)
-
-        return out
-
-    def backward(self, dout):
-        N, T, D = dout.shape
-
-        grad = 0
-        for t in range(T):
-            layer = self.layers[t]
-            layer.backward(dout[:, t, :])
-            grad += layer.grads[0]
-
-        self.grads[0][...] = grad
-        return None
 
 
 class Simple_TimeAffine:
