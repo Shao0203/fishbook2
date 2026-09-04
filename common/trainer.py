@@ -67,7 +67,7 @@ class RnnlmTrainer:
         self.ppl_list = None
         self.eval_interval = None
 
-    def get_batch(self, x, t, batch_size, time_size):
+    def _get_batch(self, x, t, batch_size, time_size):
         batch_x = np.empty((batch_size, time_size), dtype='i')
         batch_t = np.empty((batch_size, time_size), dtype='i')
 
@@ -95,7 +95,7 @@ class RnnlmTrainer:
         start_time = time.time()
         for epoch in range(max_epoch):
             for iter in range(iter_per_epoch):
-                batch_x, batch_t = self.get_batch(xs, ts, batch_size, time_size)
+                batch_x, batch_t = self._get_batch(xs, ts, batch_size, time_size)
 
                 # 计算梯度，更新参数
                 loss = model.forward(batch_x, batch_t)
